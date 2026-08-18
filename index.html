@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Volviendo a LifeDock…</title>
+
+<!--
+  PÁGINA PUENTE PARA LA VUELTA DEL BANCO
+  ======================================
+
+  POR QUÉ EXISTE
+
+  Enable Banking solo admite direcciones «https://» como URL de retorno, y rechaza
+  «lifedock://banco» con «URL uses unsupported scheme». No es un capricho: una URL con
+  esquema propio la puede registrar cualquier otra app del teléfono, y entonces el código
+  de autorización se lo lleva ella.
+
+  Esta página es la dirección https que sí acepta, y no hace absolutamente nada más que
+  reenviar a la app con los mismos parámetros con los que ha llegado.
+
+  QUÉ VE GITHUB DE TODO ESTO
+
+  El código de autorización viaja en la barra de direcciones, así que el servidor que
+  sirva este archivo lo ve en su registro. NO ES GRAVE, y conviene saber por qué: ese
+  código, solo, no vale para nada. Canjearlo por una sesión exige firmar la petición con
+  la clave privada de la aplicación, que vive únicamente en el llavero de tu iPhone. Sin
+  ella, el código es un número.
+
+  Aun así, si prefieres que ni eso salga de tu terreno, sirve este mismo archivo desde un
+  dominio tuyo. Funciona igual.
+
+  CÓMO PONERLO EN MARCHA
+
+  1. Crea un repositorio público en GitHub, por ejemplo «lifedock-banco».
+  2. Sube este archivo como «index.html» en la raíz.
+  3. Settings › Pages › Source: «Deploy from a branch», rama «main», carpeta «/ (root)».
+  4. Espera un minuto. Tu URL será:
+       https://TU-USUARIO.github.io/lifedock-banco/
+  5. Esa dirección, TAL CUAL y con la barra final, va en dos sitios:
+       · «Allowed redirect URLs» del panel de Enable Banking.
+       · «URL de retorno» en LifeDock › Finanzas › Importar del banco › Credenciales.
+     Tienen que coincidir carácter a carácter o la conexión se rechaza.
+-->
+
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: Canvas;
+    color: CanvasText;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  main { max-width: 24rem; text-align: center; }
+  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  p { margin: 0 0 1.5rem; opacity: .7; }
+  a.boton {
+    display: inline-block;
+    padding: .85rem 1.6rem;
+    border-radius: 12px;
+    background: #1c6dd0;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .error { color: #c0392b; }
+  code { font-size: .85em; opacity: .6; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="titulo">Volviendo a LifeDock…</h1>
+  <p id="detalle">Si no se abre sola, toca el botón.</p>
+  <!--
+    EL BOTÓN NO ES UN ADORNO. Safari bloquea a veces el salto automático a un esquema
+    propio cuando no ha habido un toque de por medio; sin este botón, esas veces te
+    quedarías mirando una página en blanco sin saber qué ha pasado.
+  -->
+  <a class="boton" id="abrir" href="#">Abrir LifeDock</a>
+</main>
+
+<script>
+  (function () {
+    var parametros = window.location.search || "";
+    var destino = "lifedock://banco" + parametros + (window.location.hash || "");
+
+    var enlace = document.getElementById("abrir");
+    enlace.href = destino;
+
+    // Sin parámetros no hay nada que reenviar: has entrado a la página a pelo.
+    if (!parametros) {
+      document.getElementById("titulo").textContent = "Página de retorno de LifeDock";
+      document.getElementById("titulo").className = "";
+      document.getElementById("detalle").innerHTML =
+        "Esta página solo sirve para devolverte a la app después de conectar el banco. " +
+        "No hay nada que hacer aquí.";
+      enlace.style.display = "none";
+      return;
+    }
+
+    // El banco puede devolver un error en vez de un código: cancelaste, o caducó.
+    if (parametros.indexOf("error") !== -1 && parametros.indexOf("code=") === -1) {
+      document.getElementById("titulo").className = "error";
+      document.getElementById("titulo").textContent = "El banco no ha autorizado la conexión";
+      document.getElementById("detalle").textContent =
+        "Vuelve a la app e inténtalo otra vez.";
+    }
+
+    // «replace» y no «href»: así esta página no queda en el historial. Con «href», darle
+    // a «atrás» volvería aquí y dispararía el salto otra vez con un código ya gastado.
+    window.location.replace(destino);
+  })();
+</script>
+</body>
+</html>
+
